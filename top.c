@@ -34,7 +34,8 @@ int main(int argc, char *argv[]){
 
 void top(){
 	char ch = '\0';
-	time_t end = time(0) + 3;
+	double timer = 3.00;
+	time_t end = time(0) + timer;
 	int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 	while(1){		
@@ -43,7 +44,7 @@ void top(){
     	printStats();
     	ch = '\0';
     	//sleep(3);
-    	end = time(0) + 3;
+    	end = time(0) + timer;
     	while(time(0) < end){
     		ch = getchar();
     		if(isalpha(ch) || isdigit(ch))
@@ -52,9 +53,17 @@ void top(){
     	switch(ch){
     		case 'q':
     			return;
+     		case 's':
+     			tty_mode(1);
+     			fcntl(STDIN_FILENO, F_SETFL, flags);
+    			printf("Change delay from %0.3lf to ", timer );
+    			scanf("%lf",&timer);	
+    			fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    			set_terminal_raw();    			
+    			continue;	
     		default:
     			continue;
-    	}    	
+    	}        	
 	}
 }
 
