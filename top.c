@@ -7,8 +7,12 @@
 #include <sys/sysinfo.h>
 #include <utmp.h>
 #include <ctype.h>
+#include <pwd.h>
+#include <termios.h>
+#include <fcntl.h>
 
 extern int errno;
+void top();
 void read_dir(char *);
 void getCurrentTime();
 void getTimeSinceBoot();
@@ -16,8 +20,71 @@ void getUserCount();
 void getLoadAverage();
 void loadavg();
 void getProcessesCount();
+void tty_mode(int);
+void set_terminal_raw();
+void printStats();
 
 int main(int argc, char *argv[]){
+	tty_mode(0);                /* save current terminal mode */
+    set_terminal_raw();         /* set -icanon, -echo   */
+    top();                 /* interact with user */
+    tty_mode(1); 
+	return 0;
+}
+
+void top(){
+	char ch = '\0';
+	time_t end = time(0) + 3;
+	int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+	while(1){		
+		fflush(stdout);
+		system("clear");
+    	printStats();
+    	ch = '\0';
+    	//sleep(3);
+    	end = time(0) + 3;
+    	while(time(0) < end){
+    		ch = getchar();
+    		if(isalpha(ch) || isdigit(ch))
+        		break;
+    	}    	
+    	switch(ch){
+    		case 'q':
+    			return;
+    		default:
+    			continue;
+    	}    	
+	}
+}
+
+
+void getCurrentTime(){
+	time_t currentTime = time(0);
+  	struct tm localTime = *localtime(&currentTime);
+   	printf("%02d:%02d:%02d",localTime.tm_hour, localTime.tm_min, localTime.tm_sec);
+}
+
+/* put file descriptor 0 into chr-by-chr mode and noecho mode */
+void set_terminal_raw(){
+    struct  termios ttystate;
+    tcgetattr( 0, &ttystate);               /* read current setting */
+    ttystate.c_lflag          &= ~ICANON;   /* no buffering     */
+    ttystate.c_lflag          &= ~ECHO;     /* no echo either   */
+    ttystate.c_cc[VMIN]        =  1;        /* get 1 char at a time */
+    tcsetattr( 0 , TCSANOW, &ttystate);     /* install settings */
+}
+
+/* 0 => save current mode  1 => restore mode */
+void tty_mode( int operation ){
+    static struct termios original_mode;
+    if ( operation == 0 )
+        tcgetattr( 0, &original_mode );
+    else
+        tcsetattr( 0, TCSANOW, &original_mode ); 
+}
+
+void printStats(){
 	printf("top - ");
 	getCurrentTime();
 	getTimeSinceBoot();
@@ -26,13 +93,6 @@ int main(int argc, char *argv[]){
 	getProcessesCount();
 
 	printf("\n");
-	return 0;
-}
-
-void getCurrentTime(){
-	time_t currentTime = time(0);
-  	struct tm localTime = *localtime(&currentTime);
-   	printf("%02d:%02d:%02d",localTime.tm_hour, localTime.tm_min, localTime.tm_sec);
 }
 
 void getTimeSinceBoot(){
