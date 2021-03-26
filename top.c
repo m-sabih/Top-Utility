@@ -13,6 +13,7 @@
 #include<string.h>
 
 extern int errno;
+static int processCount=26;
 
 void top();
 void read_dir(char *);
@@ -29,6 +30,7 @@ void printStats();
 void getPhysicalMemoryInfo();
 void getVirtualMemoryInfo();
 void getHelp();
+void getProcessInformation(int);
 
 int main(int argc, char *argv[]){
 	tty_mode(0);                /* save current terminal mode */
@@ -111,6 +113,32 @@ void printStats(){
 	getPhysicalMemoryInfo();
 	getVirtualMemoryInfo();
 	printf("\n");
+	getProcessInformation(processCount);
+	printf("\n");
+}
+
+void getProcessInformation(int displayCount){
+	printf("   PID  USER \t  PR  NI\tVIRT \t RES \t SHR  S \t %cCPU  %cMEM \t TIME%c  COMMAND \n",'%','%','+'); 	
+   	DIR* dp = opendir("/proc/");
+   	errno = 0;
+   	int count=0;
+   	struct dirent* entry;
+   	while(1){
+    	entry = readdir(dp);
+    	if(entry == NULL && errno != 0){
+        	perror("readdir");
+        	exit(errno);
+      	}
+      	if(entry == NULL && errno == 0){
+         	break;         
+      	}
+      	if(count==displayCount)
+      		break;
+      	count++;
+    	printf("%s  \n ",entry->d_name);
+   }
+   closedir(dp);
+   return;
 }
 
 void getTimeSinceBoot(){
