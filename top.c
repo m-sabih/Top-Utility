@@ -24,6 +24,7 @@ void getCpuUsage();
 void tty_mode(int);
 void set_terminal_raw();
 void printStats();
+void getHelp();
 
 int main(int argc, char *argv[]){
 	tty_mode(0);                /* save current terminal mode */
@@ -62,6 +63,8 @@ void top(){
     			fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
     			set_terminal_raw();    			
     			continue;	
+    		case 'h':
+    			getHelp();
     		default:
     			continue;
     	}        	
@@ -217,3 +220,24 @@ void getCpuUsage() {
   	fclose(fp);
 }
 
+void getHelp(){
+	system("clear");
+	FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    fp = fopen("help.txt", "r");
+    if (fp == NULL)
+        return;
+    while ((read = getline(&line, &len, fp)) != -1) {
+        printf("%s", line);
+    }
+    fclose(fp);
+    if (line)
+        free(line);
+    char exit;
+    do{
+		exit = getchar();
+	}while(exit != 'q');
+	return;
+}
