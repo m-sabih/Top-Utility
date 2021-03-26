@@ -69,6 +69,14 @@ void top(){
     			scanf("%lf",&timer);	
     			fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
     			set_terminal_raw();    			
+    			continue;    			
+    		case 'n':
+     			tty_mode(1);
+     			fcntl(STDIN_FILENO, F_SETFL, flags);
+    			printf("Maximum tasks = %d, change to (0 is unlimited) ", processCount );
+    			scanf("%d",&processCount);	
+    			fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    			set_terminal_raw();    			
     			continue;	
     		case 'h':
     			getHelp();
