@@ -20,6 +20,7 @@ void getUserCount();
 void getLoadAverage();
 void loadavg();
 void getProcessesCount();
+void getCpuUsage();
 void tty_mode(int);
 void set_terminal_raw();
 void printStats();
@@ -100,6 +101,7 @@ void printStats(){
 	getUserCount();
 	loadavg();
 	getProcessesCount();
+	getCpuUsage();
 
 	printf("\n");
 }
@@ -197,4 +199,19 @@ void getProcessesCount() {
    }
   closedir(dp);
   printf("Tasks: %d total,  %d running,  %d sleeping,  %d stopped,  %d zombie\n", totalProcesses, running, sleeping, stopped, zombie);
+}
+
+
+void getCpuUsage() {	
+	double user, nice, system, idle, ioWait, hardInt, softInt, vmSteal, total;
+	
+  	FILE * fp = NULL; 
+  	fp = fopen("/proc/stat", "r");
+    if (fp) {
+    	fscanf(fp, "%*s %lf %lf %lf %lf %lf %lf %lf %lf", &user, &nice, &system, &idle, &ioWait, &hardInt, &softInt, &vmSteal);
+    printf("%lf %lf %lf %lf %lf %lf %lf %lf", 
+    	user, nice, system, idle, ioWait, hardInt, softInt, vmSteal);
+    }
+    //printf("%c Cpu(s):  %0.1f us ,  %0.1f sy , %0.1f ni, %0.1f id , %0.1f wa , %0.1f hi , %0.1f si , %0.1f st \n", '%', (user * 100) / total, (system * 100) / total, (nice * 100) / total, (idle * 100) / total, (iowait * 100) / total, (irq * 100) / total, (softirq * 100) / total, (steal * 100) / total);
+  fclose(fp);
 }
