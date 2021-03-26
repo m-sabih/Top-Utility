@@ -10,6 +10,7 @@
 #include <pwd.h>
 #include <termios.h>
 #include <fcntl.h>
+#include<string.h>
 
 extern int errno;
 void top();
@@ -24,6 +25,7 @@ void getCpuUsage();
 void tty_mode(int);
 void set_terminal_raw();
 void printStats();
+void getPhysicalMemoryInfo();
 void getHelp();
 
 int main(int argc, char *argv[]){
@@ -71,7 +73,6 @@ void top(){
 	}
 }
 
-
 void getCurrentTime(){
 	time_t currentTime = time(0);
   	struct tm localTime = *localtime(&currentTime);
@@ -105,7 +106,7 @@ void printStats(){
 	loadavg();
 	getProcessesCount();
 	getCpuUsage();
-
+	getPhysicalMemoryInfo();
 	printf("\n");
 }
 
@@ -116,6 +117,7 @@ void getTimeSinceBoot(){
     if(error != 0)
     {
         printf("code error = %d\n", error);
+        return;
     }
     upTimeInSec = s_info.uptime;
     hour = (upTimeInSec / 3600);
@@ -218,6 +220,36 @@ void getCpuUsage() {
 	}	
 	fflush(fp);
   	fclose(fp);
+}
+
+void getPhysicalMemoryInfo(){
+	double totalMem, freeMem, sharedMem, bufMem, usedMem, cachedMem,bufCacheMem, value;
+	struct sysinfo s_info;
+	char line[50], field[50];
+    int error = sysinfo(&s_info);
+    if(error != 0)
+    {
+        printf("code error = %d\n", error);
+        return;
+    }
+    FILE * fp = NULL; 
+  	fp = fopen("/proc/meminfo", "r");
+  	if (fp == NULL)
+  		return;
+  	while (fgets(line, 50, fp)){
+  		sscanf(line, "%s %lf", field, &value);  		
+  		if (!strcmp(field, "Cached:")){
+        	cachedMem = value;
+        	break;
+  		}
+  	}
+    totalMem = s_info.totalram;
+    freeMem = s_info.freeram;
+    bufMem = s_info.bufferram;
+    usedMem = (totalMem/1024/1024) - (freeMem/1024/1024) - (bufMem/1024/1024) - (cachedMem/1024);
+    bufCacheMem = (bufMem/1024/1024) + (cachedMem/1024);
+    printf("Mib Mem: %0.1f total, %0.1f free, %0.1f used, %0.1f buff/cache \n", totalMem/1024/1024, freeMem/1024/1024, usedMem, bufCacheMem);    
+	
 }
 
 void getHelp(){
