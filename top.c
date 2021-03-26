@@ -31,6 +31,7 @@ void getPhysicalMemoryInfo();
 void getVirtualMemoryInfo();
 void getHelp();
 void getProcessInformation(int);
+char* getUserNameById(int);
 
 int main(int argc, char *argv[]){
 	tty_mode(0);                /* save current terminal mode */
@@ -118,11 +119,25 @@ void printStats(){
 }
 
 void getProcessInformation(int displayCount){
-	printf("   PID  USER \t  PR  NI\tVIRT \t RES \t SHR  S \t %cCPU  %cMEM \t TIME%c  COMMAND \n",'%','%','+'); 	
+	printf("PID   USER \t  PR  NI\tVIRT \t RES \t SHR  S \t %cCPU  %cMEM \t TIME%c  COMMAND \n",'%','%','+'); 	
    	DIR* dp = opendir("/proc/");
+   	
+   	char name[100];
+  	char state;
+  	long pid;
+  	long uid;
+
+  	int value;
+	char field[50];
+
+   	char statDirName[100];
+   	char loginDirName[100];
+   	char line[500];
    	errno = 0;
-   	int count=0;
+   	int totalProcesses=0;
    	struct dirent* entry;
+   	FILE * fp = NULL;
+   	FILE * fp2 = NULL;  
    	while(1){
     	entry = readdir(dp);
     	if(entry == NULL && errno != 0){
@@ -132,13 +147,49 @@ void getProcessInformation(int displayCount){
       	if(entry == NULL && errno == 0){
          	break;         
       	}
-      	if(count==displayCount)
+      	if(totalProcesses==displayCount)
       		break;
-      	count++;
-    	printf("%s  \n ",entry->d_name);
+      	long lpid = atol(entry -> d_name);
+	    if (entry -> d_type == DT_DIR) {
+    	    if (isdigit(entry -> d_name[0])) {
+        	  	totalProcesses++;
+        	  	snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);          
+          		fp = fopen(statDirName, "r");
+				if (fp) {
+            		fscanf(fp, "%ld %s %c", &pid, name, &state);    				
+    			}
+    			fclose(fp);
+
+    			snprintf(loginDirName, sizeof(loginDirName), "/proc/%ld/status", lpid);          
+          		fp2 = fopen(loginDirName, "r");
+          		while (fgets(line, 500, fp2)){
+			  		sscanf(line, "%s %d", field, &value);  		
+			  		if (!strcmp(field, "Uid:")){			        	
+			  	//		printf("%d\n",value);
+			        	break;
+			  		}
+			  	}
+    			fclose(fp2);
+    			char* username = getUserNameById(value);
+    			printf("%s  %s %c   \n ",entry->d_name,username,state);
+    		}
+   		}
+	}
+   	closedir(dp);
+   	return;
+}
+
+char* getUserNameById(int uid){
+	errno = 0;
+	struct passwd * pwd = getpwuid(uid);
+	if (pwd == NULL){
+      	if (errno == 0)
+        	printf("Record not found in passwd file.\n");
+      	else
+        	perror("getpwuid failed");
+    return "";
    }
-   closedir(dp);
-   return;
+   return pwd->pw_name;
 }
 
 void getTimeSinceBoot(){
