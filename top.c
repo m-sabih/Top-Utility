@@ -13,6 +13,7 @@
 #include<string.h>
 
 extern int errno;
+
 void top();
 void read_dir(char *);
 void getCurrentTime();
@@ -152,34 +153,34 @@ void loadavg(void){
 }
 
 void getProcessesCount() {
-  int totalProcesses = 0, running = 0, sleeping = 0, stopped = 0, zombie = 0;
-  char dirName[100];
-  char name[100];
-  char state;
+  	int totalProcesses = 0, running = 0, sleeping = 0, stopped = 0, zombie = 0;
+  	char dirName[100];
+  	char name[100];
+  	char state;
   
-  long pid;
-  FILE * fp = NULL;  
-  struct dirent * entry;
+  	long pid;
+  	FILE * fp = NULL;  
+  	struct dirent * entry;
 
-   DIR* dp = opendir("/proc");
-   errno = 0;
-   while(1){
-      entry = readdir(dp);
-      if(entry == NULL && errno != 0){
-         perror("error while reading proc directory");
-         exit(errno);
-      }
-      if(entry == NULL && errno == 0){
-         break;         
-      }
-      long lpid = atol(entry -> d_name);
-      if (entry -> d_type == DT_DIR) {
+   	DIR* dp = opendir("/proc");
+   	errno = 0;
+   	while(1){
+      	entry = readdir(dp);
+      	if(entry == NULL && errno != 0){
+        	perror("error while reading proc directory");
+         	exit(errno);
+      	}
+    if(entry == NULL && errno == 0){
+        break;         
+    }
+    long lpid = atol(entry -> d_name);
+    if (entry -> d_type == DT_DIR) {
         if (isdigit(entry -> d_name[0])) {
-          totalProcesses++;
-          snprintf(dirName, sizeof(dirName), "/proc/%ld/stat", lpid);          
-          fp = fopen(dirName, "r");
+          	totalProcesses++;
+          	snprintf(dirName, sizeof(dirName), "/proc/%ld/stat", lpid);          
+          	fp = fopen(dirName, "r");
 
-          if (fp) {
+        if (fp) {
             fscanf(fp, "%ld %s %c", &pid, name, &state);
             switch (state) {
             	case 'R':
@@ -204,8 +205,8 @@ void getProcessesCount() {
         }
       }
    }
-  closedir(dp);
-  printf("Tasks: %d total,  %d running,  %d sleeping,  %d stopped,  %d zombie\n", totalProcesses, running, sleeping, stopped, zombie);
+  	closedir(dp);
+  	printf("Tasks: %d total,  %d running,  %d sleeping,  %d stopped,  %d zombie\n", totalProcesses, running, sleeping, stopped, zombie);
 }
 
 void getCpuUsage() {	
