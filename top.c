@@ -13,7 +13,7 @@
 #include<string.h>
 
 extern int errno;
-static int processCount=26;
+static int processCount=15;
 
 void top();
 void read_dir(char *);
@@ -127,13 +127,13 @@ void printStats(){
 }
 
 void getProcessInformation(int displayCount){
-	printf("PID   USER \t  PR  NI\tVIRT \t RES \t SHR  S \t %cCPU  %cMEM \t TIME%c  COMMAND \n",'%','%','+'); 	
+	printf("PID \t USER \t PR \t NI\tVIRT \t RES \t SHR  S \t %cCPU  %cMEM \t TIME%c  COMMAND \n",'%','%','+');
    	DIR* dp = opendir("/proc/");
    	
    	char name[100];
-  	char state;
-  	long pid;
+  	char state;  	
   	long uid;
+  	long pid,priority,nice;
 
   	int value;
 	char field[50];
@@ -164,7 +164,7 @@ void getProcessInformation(int displayCount){
         	  	snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);          
           		fp = fopen(statDirName, "r");
 				if (fp) {
-            		fscanf(fp, "%ld %s %c", &pid, name, &state);    				
+            		fscanf(fp, "%ld %s %c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %ld %ld", &pid, name, &state, &priority, &nice);
     			}
     			fclose(fp);
 
@@ -173,13 +173,12 @@ void getProcessInformation(int displayCount){
           		while (fgets(line, 500, fp2)){
 			  		sscanf(line, "%s %d", field, &value);  		
 			  		if (!strcmp(field, "Uid:")){			        	
-			  	//		printf("%d\n",value);
 			        	break;
 			  		}
 			  	}
     			fclose(fp2);
     			char* username = getUserNameById(value);
-    			printf("%s  %s %c   \n ",entry->d_name,username,state);
+    			printf("%s \t %s \t %ld \t %ld\t     \t     \t      %c \t           \t               \n",entry->d_name,username,priority,nice,state);
     		}
    		}
 	}
