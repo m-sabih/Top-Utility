@@ -165,7 +165,7 @@ void getProcessInformation(int displayCount){
         	  	snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);          
           		fp = fopen(statDirName, "r");
 				if (fp) {
-            		fscanf(fp, "%ld %s %c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %ld %ld %ld %ld %*d %*d %ld", &pid, name, &state, &userTime, &kernalTime, &childrenWaitUserTime, &childrenWaitKernalTime, &priority, &nice, &startTime);
+            		fscanf(fp, "%ld (%[^)]) %c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %ld %ld %ld %ld %*d %*d %ld", &pid, name, &state, &userTime, &kernalTime, &childrenWaitUserTime, &childrenWaitKernalTime, &priority, &nice, &startTime);
     			}
     			fclose(fp);
 
@@ -210,7 +210,7 @@ void getProcessInformation(int displayCount){
   				min = (timePlus - (3600 * hour)) / 60;
 				sec = (timePlus - (3600 * hour) - (min * 60));
 
-    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\t%d:%d:%d\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime,hour,min,sec);
+    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\t%d:%d:%d\t%s\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime,hour,min,sec,name);
     			userId = virtualMem = residentMem = sharedMem = startTime = 0;
     			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = memTime = seconds = 0;
     		}
