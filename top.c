@@ -127,7 +127,7 @@ void printStats(){
 }
 
 void getProcessInformation(int displayCount){
-	printf("PID \t USER \t PR \t NI\tVIRT \t RES \t SHR  S \t %cCPU  %cMEM \t TIME%c  COMMAND \n",'%','%','+');
+	printf("PID \t USER \t PR \t NI\tVIRT \t RES \t SHR\tS \t %cCPU \t %cMEM \t TIME%c \t COMMAND\n",'%','%','+');
    	DIR* dp = opendir("/proc/");
    	
    	char name[100];
@@ -135,7 +135,7 @@ void getProcessInformation(int displayCount){
   	long uid;
   	long pid,priority,nice;
 
-  	int value;
+  	int value, value2;
 	char field[50];
 
    	char statDirName[100];
@@ -171,14 +171,14 @@ void getProcessInformation(int displayCount){
     			snprintf(loginDirName, sizeof(loginDirName), "/proc/%ld/status", lpid);          
           		fp2 = fopen(loginDirName, "r");
           		while (fgets(line, 500, fp2)){
-			  		sscanf(line, "%s %d", field, &value);  		
+			  		sscanf(line, "%s %d %d", field, &value, &value2);  		
 			  		if (!strcmp(field, "Uid:")){			        	
 			        	break;
 			  		}
 			  	}
     			fclose(fp2);
-    			char* username = getUserNameById(value);
-    			printf("%s \t %s \t %ld \t %ld\t     \t     \t      %c \t           \t               \n",entry->d_name,username,priority,nice,state);
+    			char* username = getUserNameById(value2);
+    			printf("%s \t %s \t %ld \t %ld\t \t \t \t%c \t \t \n",entry->d_name,username,priority,nice,state);
     		}
    		}
 	}
