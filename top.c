@@ -203,8 +203,15 @@ void getProcessInformation(int displayCount){
     			totalMem = totalMem/1024/1024;
     			memTime = (residentMem/totalMem)/10;
 
-    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime);
-    			userId = virtualMem = residentMem = sharedMem = 0;
+				time_t currentTime = time(0);
+    			long timePlus = (upTime - (startTime/ticks));
+    			int hour, min, sec;
+    			hour = (timePlus / 3600);
+  				min = (timePlus - (3600 * hour)) / 60;
+				sec = (timePlus - (3600 * hour) - (min * 60));
+
+    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\t%d:%d:%d\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime,hour,min,sec);
+    			userId = virtualMem = residentMem = sharedMem = startTime = 0;
     			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = memTime = seconds = 0;
     		}
    		}
