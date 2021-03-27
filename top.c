@@ -126,100 +126,6 @@ void printStats(){
 	printf("\n");
 }
 
-void getProcessInformation(int displayCount){
-	printf("PID\tUSER\tPR\tNI\tVIRT\tRES\tSHR\tS\t%cCPU\t%cMEM\tTIME%c\tCOMMAND\n",'%','%','+');
-   	DIR* dp = opendir("/proc/");
-   	
-   	char name[100];
-   	char statDirName[100];
-   	char statusDirName[100];
-   	char line[500];
-   	char field[50];
-
-  	char state;  	
-  	long uid, pid, priority, nice;
-	long value, value2, userId, virtualMem, residentMem, sharedMem, userTime, kernalTime, childrenWaitUserTime, childrenWaitKernalTime, startTime, upTime;
-
-	double cpuTime, memTime, totalMem, totalTime;
-	long ticks = sysconf(_SC_CLK_TCK);
-   	errno = 0;
-   	int totalProcesses=0;
-   	struct dirent* entry;
-   	FILE * fp = NULL;
-   	FILE * fp2 = NULL;  
-   	while(1){
-    	entry = readdir(dp);
-    	if(entry == NULL && errno != 0){
-        	perror("readdir");
-        	exit(errno);
-      	}
-      	if(entry == NULL && errno == 0){
-         	break;         
-      	}
-      	if(totalProcesses==displayCount)
-      		break;
-      	long lpid = atol(entry -> d_name);
-	    if (entry -> d_type == DT_DIR) {
-    	    if (isdigit(entry -> d_name[0])) {
-        	  	totalProcesses++;
-        	  	snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);          
-          		fp = fopen(statDirName, "r");
-				if (fp) {
-            		fscanf(fp, "%ld (%[^)]) %c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %ld %ld %ld %ld %*d %*d %ld", &pid, name, &state, &userTime, &kernalTime, &childrenWaitUserTime, &childrenWaitKernalTime, &priority, &nice, &startTime);
-    			}
-    			fclose(fp);
-
-    			snprintf(statusDirName, sizeof(statusDirName), "/proc/%ld/status", lpid);          
-          		fp2 = fopen(statusDirName, "r");
-          		while (fgets(line, 500, fp2)){          			
-			  		sscanf(line, "%s %ld %ld", field, &value, &value2);  		
-			  		if (!strcmp(field, "Uid:"))			        	
-			        	userId = value2;			  		
-			  		else if (!strcmp(field, "VmSize:"))
-        				virtualMem = value;
-      				else if (!strcmp(field, "VmRSS:"))
-	        			residentMem = value;
-    	    		else if (!strcmp(field, "RssAnon:")){
-        				sharedMem = value;
-        				break;
-        			}
-			  	}
-    			fclose(fp2);
-    			char* username = getUserNameById(userId);
-    			
-    			struct sysinfo s_info;
-			    int error = sysinfo(&s_info);
-			    if(error != 0)
-			    {
-			        printf("code error = %d\n", error);
-			        return;
-			    }
-			    upTime = s_info.uptime;
-			    totalTime = userTime + kernalTime + childrenWaitUserTime + childrenWaitKernalTime;
-			    double seconds = upTime - (startTime / ticks);
-			    cpuTime = 100 * ((totalTime / ticks) / seconds);	
-			    		
-    			totalMem = s_info.totalram; 
-    			totalMem = totalMem/1024/1024;
-    			memTime = (residentMem/totalMem)/10;
-
-				time_t currentTime = time(0);
-    			long timePlus = (upTime - (startTime/ticks));
-    			int hour, min, sec;
-    			hour = (timePlus / 3600);
-  				min = (timePlus - (3600 * hour)) / 60;
-				sec = (timePlus - (3600 * hour) - (min * 60));
-
-    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\t%d:%d:%d\t%s\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime,hour,min,sec,name);
-    			userId = virtualMem = residentMem = sharedMem = startTime = 0;
-    			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = memTime = seconds = 0;
-    		}
-   		}
-	}
-   	closedir(dp);
-   	return;
-}
-
 char* getUserNameById(int uid){
 	errno = 0;
 	struct passwd * pwd = getpwuid(uid);
@@ -399,6 +305,100 @@ void getVirtualMemoryInfo(){
     freeSwapMem = s_info.freeswap;
     usedMem = (totalSwapMem/1024/1024) - (freeSwapMem/1024/1024);
     printf("Mib Mem:   %0.1f   total, %0.1f   free, %0.1f   used, %0.1f   avail Mem \n", totalSwapMem/1024/1024, freeSwapMem/1024/1024, usedMem, availMem/1024);
+}
+
+void getProcessInformation(int displayCount){
+	printf("PID\tUSER\tPR\tNI\tVIRT\tRES\tSHR\tS\t%cCPU\t%cMEM\tTIME%c\tCOMMAND\n",'%','%','+');
+   	DIR* dp = opendir("/proc/");
+   	
+   	char name[100];
+   	char statDirName[100];
+   	char statusDirName[100];
+   	char line[500];
+   	char field[50];
+
+  	char state;  	
+  	long uid, pid, priority, nice;
+	long value, value2, userId, virtualMem, residentMem, sharedMem, userTime, kernalTime, childrenWaitUserTime, childrenWaitKernalTime, startTime, upTime;
+
+	double cpuTime, memTime, totalMem, totalTime;
+	long ticks = sysconf(_SC_CLK_TCK);
+   	errno = 0;
+   	int totalProcesses=0;
+   	struct dirent* entry;
+   	FILE * fp = NULL;
+   	FILE * fp2 = NULL;  
+   	while(1){
+    	entry = readdir(dp);
+    	if(entry == NULL && errno != 0){
+        	perror("readdir");
+        	exit(errno);
+      	}
+      	if(entry == NULL && errno == 0){
+         	break;         
+      	}
+      	if(totalProcesses==displayCount)
+      		break;
+      	long lpid = atol(entry -> d_name);
+	    if (entry -> d_type == DT_DIR) {
+    	    if (isdigit(entry -> d_name[0])) {
+        	  	totalProcesses++;
+        	  	snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);          
+          		fp = fopen(statDirName, "r");
+				if (fp) {
+            		fscanf(fp, "%ld (%[^)]) %c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %ld %ld %ld %ld %*d %*d %ld", &pid, name, &state, &userTime, &kernalTime, &childrenWaitUserTime, &childrenWaitKernalTime, &priority, &nice, &startTime);
+    			}
+    			fclose(fp);
+
+    			snprintf(statusDirName, sizeof(statusDirName), "/proc/%ld/status", lpid);          
+          		fp2 = fopen(statusDirName, "r");
+          		while (fgets(line, 500, fp2)){          			
+			  		sscanf(line, "%s %ld %ld", field, &value, &value2);  		
+			  		if (!strcmp(field, "Uid:"))			        	
+			        	userId = value2;			  		
+			  		else if (!strcmp(field, "VmSize:"))
+        				virtualMem = value;
+      				else if (!strcmp(field, "VmRSS:"))
+	        			residentMem = value;
+    	    		else if (!strcmp(field, "RssAnon:")){
+        				sharedMem = value;
+        				break;
+        			}
+			  	}
+    			fclose(fp2);
+    			char* username = getUserNameById(userId);
+    			
+    			struct sysinfo s_info;
+			    int error = sysinfo(&s_info);
+			    if(error != 0)
+			    {
+			        printf("code error = %d\n", error);
+			        return;
+			    }
+			    upTime = s_info.uptime;
+			    totalTime = userTime + kernalTime + childrenWaitUserTime + childrenWaitKernalTime;
+			    double seconds = upTime - (startTime / ticks);
+			    cpuTime = 100 * ((totalTime / ticks) / seconds);	
+			    		
+    			totalMem = s_info.totalram; 
+    			totalMem = totalMem/1024/1024;
+    			memTime = (residentMem/totalMem)/10;
+
+				time_t currentTime = time(0);
+    			long timePlus = (upTime - (startTime/ticks));
+    			int hour, min, sec;
+    			hour = (timePlus / 3600);
+  				min = (timePlus - (3600 * hour)) / 60;
+				sec = (timePlus - (3600 * hour) - (min * 60));
+
+    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\t%d:%d:%d\t%s\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime,hour,min,sec,name);
+    			userId = virtualMem = residentMem = sharedMem = startTime = 0;
+    			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = memTime = seconds = 0;
+    		}
+   		}
+	}
+   	closedir(dp);
+   	return;
 }
 
 void getHelp(){
