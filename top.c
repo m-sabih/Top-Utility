@@ -127,7 +127,7 @@ void printStats(){
 }
 
 void getProcessInformation(int displayCount){
-	printf("PID \t USER \t PR \t NI\tVIRT \t RES \t SHR\tS \t %cCPU \t %cMEM \t TIME%c \t COMMAND\n",'%','%','+');
+	printf("PID\tUSER\tPR\tNI\tVIRT\tRES\tSHR\tS\t%cCPU\t%cMEM\tTIME%c\tCOMMAND\n",'%','%','+');
    	DIR* dp = opendir("/proc/");
    	
    	char name[100];
@@ -136,6 +136,7 @@ void getProcessInformation(int displayCount){
   	long pid,priority,nice;
 
   	int value, value2;
+  	int userId, virtualMem, residentMem, sharedMem;
 	char field[50];
 
    	char statDirName[100];
@@ -170,15 +171,23 @@ void getProcessInformation(int displayCount){
 
     			snprintf(loginDirName, sizeof(loginDirName), "/proc/%ld/status", lpid);          
           		fp2 = fopen(loginDirName, "r");
-          		while (fgets(line, 500, fp2)){
+          		while (fgets(line, 500, fp2)){          			
 			  		sscanf(line, "%s %d %d", field, &value, &value2);  		
-			  		if (!strcmp(field, "Uid:")){			        	
-			        	break;
-			  		}
+			  		if (!strcmp(field, "Uid:"))			        	
+			        	userId = value2;			  		
+			  		else if (!strcmp(field, "VmSize:"))
+        				virtualMem = value;
+      				else if (!strcmp(field, "VmRSS:"))
+	        			residentMem = value;
+    	    		else if (!strcmp(field, "RssAnon:")){
+        				sharedMem = value;
+        				break;
+        			}
 			  	}
     			fclose(fp2);
-    			char* username = getUserNameById(value2);
-    			printf("%s \t %s \t %ld \t %ld\t \t \t \t%c \t \t \n",entry->d_name,username,priority,nice,state);
+    			char* username = getUserNameById(userId);
+    			printf("%s\t%s\t%ld\t%ld\t%d\t%d\t%d\t%c\t\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state);
+    			userId = virtualMem = residentMem = sharedMem = 0;
     		}
    		}
 	}
@@ -191,7 +200,7 @@ char* getUserNameById(int uid){
 	struct passwd * pwd = getpwuid(uid);
 	if (pwd == NULL){
       	if (errno == 0)
-        	printf("Record not found in passwd file.\n");
+        	return "";
       	else
         	perror("getpwuid failed");
     return "";
