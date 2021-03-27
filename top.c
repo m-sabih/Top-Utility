@@ -140,7 +140,7 @@ void getProcessInformation(int displayCount){
   	long uid, pid, priority, nice;
 	long value, value2, userId, virtualMem, residentMem, sharedMem, userTime, kernalTime, childrenWaitUserTime, childrenWaitKernalTime, startTime, upTime;
 
-	double cpuTime, totalTime;
+	double cpuTime, memTime, totalMem, totalTime;
 	long ticks = sysconf(_SC_CLK_TCK);
    	errno = 0;
    	int totalProcesses=0;
@@ -197,11 +197,15 @@ void getProcessInformation(int displayCount){
 			    upTime = s_info.uptime;
 			    totalTime = userTime + kernalTime + childrenWaitUserTime + childrenWaitKernalTime;
 			    double seconds = upTime - (startTime / ticks);
-			    cpuTime = 100 * ((totalTime / ticks) / seconds);			    
+			    cpuTime = 100 * ((totalTime / ticks) / seconds);	
+			    		
+    			totalMem = s_info.totalram; 
+    			totalMem = totalMem/1024/1024;
+    			memTime = (residentMem/totalMem)/10;
 
-    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime);
+    			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime);
     			userId = virtualMem = residentMem = sharedMem = 0;
-    			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = seconds = 0;
+    			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = memTime = seconds = 0;
     		}
    		}
 	}
