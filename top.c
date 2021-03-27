@@ -10,7 +10,7 @@
 #include <pwd.h>
 #include <termios.h>
 #include <fcntl.h>
-#include<string.h>
+#include <string.h>
 
 extern int errno;
 static int processCount=15;
@@ -32,6 +32,18 @@ void getVirtualMemoryInfo();
 void getHelp();
 void getProcessInformation(int);
 char* getUserNameById(int);
+struct SortTop* sortedArrayOfPids();
+
+
+struct SortTop {
+    long pid;
+    double cpu;
+};
+  
+int comparator(const void* p, const void* q)
+{
+    return (((struct SortTop*)q)->cpu - ((struct SortTop*)p)->cpu);
+}
 
 int main(int argc, char *argv[]){
 	tty_mode(0);                /* save current terminal mode */
@@ -123,6 +135,11 @@ void printStats(){
 	getVirtualMemoryInfo();
 	printf("\n");
 	getProcessInformation(processCount);
+	//struct SortTop* processes = sortedArrayOfPids();
+	//for (int j = 0; j < processCount; j++) { 
+//		printf("%ld: %f\n", processes[j].pid, processes[j].cpu);
+//	}
+
 	printf("\n");
 }
 
@@ -328,29 +345,26 @@ void getProcessInformation(int displayCount){
    	struct dirent* entry;
    	FILE * fp = NULL;
    	FILE * fp2 = NULL;  
-   	while(1){
-    	entry = readdir(dp);
-    	if(entry == NULL && errno != 0){
-        	perror("readdir");
-        	exit(errno);
-      	}
-      	if(entry == NULL && errno == 0){
-         	break;         
-      	}
-      	if(totalProcesses==displayCount)
-      		break;
-      	long lpid = atol(entry -> d_name);
-	    if (entry -> d_type == DT_DIR) {
-    	    if (isdigit(entry -> d_name[0])) {
-        	  	totalProcesses++;
-        	  	snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);          
+   	struct SortTop* processes = sortedArrayOfPids();
+   	for (int k = 0; k < processCount; k++) { 
+		printf("%ld: %f\n", processes[k].pid, processes[k].cpu);
+		//snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", processes[k].pid);
+		//printf("%s\n", statDirName);
+	}
+   	
+    for (int j = 0; j < displayCount; j++) {
+      		    snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", processes[j].pid);          
+      		    printf("%s\n", statDirName);
           		fp = fopen(statDirName, "r");
+          		printf("%s\n", statDirName);
 				if (fp) {
             		fscanf(fp, "%ld (%[^)]) %c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %ld %ld %ld %ld %*d %*d %ld", &pid, name, &state, &userTime, &kernalTime, &childrenWaitUserTime, &childrenWaitKernalTime, &priority, &nice, &startTime);
     			}
+    			else
     			fclose(fp);
+    			printf("%sjasasdhkashdkjashjkdshjkh","");
 
-    			snprintf(statusDirName, sizeof(statusDirName), "/proc/%ld/status", lpid);          
+    			snprintf(statusDirName, sizeof(statusDirName), "/proc/%ld/status", processes[j].pid);          
           		fp2 = fopen(statusDirName, "r");
           		while (fgets(line, 500, fp2)){          			
 			  		sscanf(line, "%s %ld %ld", field, &value, &value2);  		
@@ -366,7 +380,7 @@ void getProcessInformation(int displayCount){
         			}
 			  	}
     			fclose(fp2);
-    			char* username = getUserNameById(userId);
+    			char* username = getUserNameById(userId);    			
     			
     			struct sysinfo s_info;
 			    int error = sysinfo(&s_info);
@@ -394,11 +408,91 @@ void getProcessInformation(int displayCount){
     			printf("%s\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%c\t%0.1lf\t%0.1f\t%d:%d:%d\t%s\n",entry->d_name,username,priority,nice,virtualMem,residentMem,residentMem-sharedMem,state,cpuTime,memTime,hour,min,sec,name);
     			userId = virtualMem = residentMem = sharedMem = startTime = 0;
     			userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = memTime = seconds = 0;
-    		}
-   		}
+    	
 	}
    	closedir(dp);
+   	free(processes);
    	return;
+}
+
+struct SortTop* sortedArrayOfPids(){
+   	int i = 0, n = 2000;
+    struct SortTop *arr = malloc( n * sizeof(struct SortTop));
+  
+
+   DIR* dp = opendir("/proc/");
+      char name[100];
+      char statDirName[100];
+      long uid, pid, priority, nice;
+   long value, value2, userId, virtualMem, residentMem, sharedMem, userTime, kernalTime, childrenWaitUserTime, childrenWaitKernalTime, startTime, upTime;
+
+   i=0;
+   double cpuTime, totalTime;
+   long ticks = sysconf(_SC_CLK_TCK);
+      errno = 0;
+      struct dirent* entry;
+      FILE * fp = NULL;
+      while(1){
+      entry = readdir(dp);
+      if(entry == NULL && errno != 0){
+         perror("readdir");
+         exit(errno);
+         }
+         if(entry == NULL && errno == 0){
+            break;         
+         }
+         long lpid = atol(entry -> d_name);
+       if (entry -> d_type == DT_DIR) {
+          if (isdigit(entry -> d_name[0])) {             
+            arr[i].pid= lpid; 
+            snprintf(statDirName, sizeof(statDirName), "/proc/%ld/stat", lpid);
+
+                     
+
+               fp = fopen(statDirName, "r");
+            if (fp) {
+                  fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld %ld %ld %ld %ld %*d %*d %ld", &userTime, &kernalTime, &childrenWaitUserTime, &childrenWaitKernalTime, &priority, &nice, &startTime);
+            }
+            fclose(fp);
+            struct sysinfo s_info;
+             int error = sysinfo(&s_info);
+             if(error != 0)
+             {
+                 printf("code error = %d\n", error);
+                 break;
+             }
+             upTime = s_info.uptime;
+             totalTime = userTime + kernalTime + childrenWaitUserTime + childrenWaitKernalTime;
+             double seconds = upTime - (startTime / ticks);
+             cpuTime = 100 * ((totalTime / ticks) / seconds); 
+
+            
+             arr[i].cpu=cpuTime; 
+             //printf("%s: %f\n",statDirName, cpuTime);
+             //printf("%ld: %f\n", arr[i].pid, arr[i].cpu);
+
+             i++;
+             userTime = kernalTime = childrenWaitUserTime = childrenWaitKernalTime = totalTime = cpuTime = 0;
+
+         }
+         }         
+   }
+      closedir(dp);      
+
+//printf("%ld: %f\n", arr[10].pid, arr[10].cpu);
+//printf("%ld: %f\n", arr[9].pid, arr[9].cpu);
+  int j=0;
+    for (j = 0; j < i; j++) {
+      //printf("%s: %f\n", arr[j].name, arr[j].cpu);
+   }
+
+    qsort(arr, i, sizeof(struct SortTop), comparator);
+
+    //for (j = 0; j < i; j++) {
+      //printf("%ld: %f\n", arr[j].pid, arr[j].cpu);
+   //}
+
+   return arr;
 }
 
 void getHelp(){
