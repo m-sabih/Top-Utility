@@ -321,7 +321,7 @@ void getVirtualMemoryInfo(){
 }
 
 void getProcessInformation(int displayCount){
-	printf("PID\tUSER\tPR\tNI\tVIRT\tRES\tSHR\tS\t%cCPU\t%cMEM\tTIME%c\tCOMMAND\n",'%','%','+');
+	printf("\033[7mPID\tUSER\tPR\tNI\tVIRT\tRES\tSHR\tS\t%cCPU\t%cMEM\tTIME%c\tCOMMAND\033[m\n",'%','%','+');
 	DIR* dp = opendir("/proc/");
 
 	char name[100];
