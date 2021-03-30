@@ -15,7 +15,6 @@
 extern int errno;
 static int processCount=15;
 static int maxProcess = 15;
-//static char* user = "all";
 static int user = -1;
 static int lengthCount = 0;
 
@@ -38,7 +37,6 @@ void getHelp();
 void getProcessInformation(int);
 char* getUserNameById(int);
 struct SortTop* sortedArrayOfPids();
-
 
 struct SortTop {
 	long pid;
@@ -162,8 +160,6 @@ void printStats(){
 	getVirtualMemoryInfo();
 	printf("\n");
 	getProcessInformation(processCount);
-
-	printf("\n");
 }
 
 char* getUserNameById(int uid){
